@@ -1,0 +1,110 @@
+{
+    "contributors": [
+        {
+            "affiliation": "EMBL Heidelberg",
+            "name": "Ahlmann-Eltze, Constantin",
+            "orcid": "0000-0002-3762-068X",
+            "type": "Other"
+        },
+        {
+            "name": "Besançon, Mathieu",
+            "orcid": "0000-0002-6284-3033",
+            "type": "Other"
+        },
+        {
+            "affiliation": "University of Cambridge",
+            "name": "Diepeveen, Willem",
+            "type": "ProjectMember",
+            "orcid": "0000-0002-4690-9258"
+        },
+        {
+            "name": "Dornig, Renée",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "NTNU Trondheim",
+            "name": "Jasa, Hajg",
+            "orcid": "0009-0002-7917-0530",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "NTNU Trondheim",
+            "name": "Kjemsås, Even Stephansen",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "NTNU Trondheim",
+            "name": "Kolstø, Johannes Voll",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "University of Hamburg",
+            "name": "Lampert, Joshua",
+            "orcid": "0009-0007-0971-6709",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "NTNU Trondheim",
+            "name": "Oddsen, Sander Engen",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "Augsburg University",
+            "name": "Püschel, Jonas",
+            "orcid": "0009-0007-1946-2925",
+            "type": "ProjectMember"
+        },
+        {
+            "name": "Rebjock, Quentin",
+            "type": "ProjectMember"
+        },
+        {
+            "name": "Riemer, Tom-Christian",
+            "type": "ProjectMember"
+        },
+        {
+            "name": "Schilly, Harald",
+            "type": "Other"
+        },
+        {
+            "affiliation": "NTNU Trondheim",
+            "name": "Stokkenes, Markus A.",
+            "type": "ProjectMember"
+        },
+        {
+            "name": "Daniel VandenHeuvel",
+            "orcid": "0000-0001-6462-0135",
+            "type": "other"
+        },
+        {
+            "affiliation": "University of Bayreuth",
+            "name": "Weigl, Laura",
+            "orcid": "0009-0006-4520-5968",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "Heidelberg University",
+            "name": "Weiß, Manuel",
+            "orcid": "0000-0002-6098-9725",
+            "type": "ProjectMember"
+        }
+    ],
+    "creators": [
+        {
+            "affiliation": "NTNU Trondheim",
+            "name": "Bergmann, Ronny",
+            "orcid": "0000-0001-8342-7218"
+        }
+    ],
+    "description": "Manopt.jl is a Julia package for optimization on manifolds.",
+    "keywords": [
+        "Riemannian manifolds",
+        "optimization",
+        "manifolds",
+        "Julia",
+        "Programming"
+    ],
+    "license": "MIT",
+    "title": "Manopt.jl",
+    "upload_type": "software"
+}

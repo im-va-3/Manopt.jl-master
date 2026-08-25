@@ -1,0 +1,205 @@
+function Manopt.add_vector!(M::Hyperrectangle, X, p, c::AbstractVector, basis::AbstractBasis{ℝ})
+    S = representation_size(M)
+    X .+= reshape(c, S)
+    return X
+end
+
+# For pure array power manifold vectors, we use the setting of matrices
+
+function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
+    return Manopt.maybe_wrap_function(Jf, p, e; result = :Matrix)
+end
+function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{NestedPowerRepresentation}, e::AllocatingEvaluation)
+    return Manopt.maybe_wrap_function(Jf, p, e; result = :TangentVectors)
+end
+
+"""
+    default_point_distance(::DefaultManifold, p)
+
+Following [HagerZhang:2006:2](@cite), the expected distance to the optimal solution from `p`
+on `DefaultManifold` is the `Inf` norm of `p`.
+"""
+Manopt.default_point_distance(::Euclidean, p) = norm(p, Inf)
+
+Manopt.default_vector_norm(::Euclidean, p, X) = norm(p, Inf)
+
+"""
+    get_bounds_index(::Hyperrectangle)
+
+Get the bound indices of [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`. They are the same as the indices of the
+lower (or upper) bounds.
+"""
+Manopt.get_bounds_index(M::Hyperrectangle) = eachindex(M.lb)
+"""
+    get_stepsize_bound(M::Hyperrectangle, x, d, i)
+
+Get the upper bound on moving in direction `d` from point `p` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`,
+for the bound index `i`. There are three cases:
+
+1. If `d[i] > 0`, the formula reads `(M.ub[i] - p[i]) / d[i]`.
+2. If `d[i] < 0`, the formula reads `(M.lb[i] - p[i]) / d[i]`.
+3. If `d[i] == 0`, the result is `Inf`.
+"""
+function Manopt.get_stepsize_bound(M::Hyperrectangle, p, d, i)
+    if d[i] > 0
+        return (M.ub[i] - p[i]) / d[i]
+    elseif d[i] < 0
+        return (M.lb[i] - p[i]) / d[i]
+    else
+        return Inf
+    end
+end
+
+"""
+    max_stepsize(M::TangentBundle, p)
+
+Tangent bundle has injectivity radius of either infinity (for flat manifolds) or 0
+(for non-flat manifolds). This makes a guess of what a reasonable maximum stepsize
+on a tangent bundle might be.
+"""
+function max_stepsize(M::TangentBundle, p)
+    return max_stepsize(M.manifold, p[M, :point])
+end
+function max_stepsize(M::TangentBundle)
+    return max_stepsize(M.manifold)
+end
+"""
+    max_stepsize(M::FixedRankMatrices, p)
+
+Return a reasonable guess of maximum step size on `FixedRankMatrices` following
+the choice of typical distance in Matlab Manopt, the dimension of `M`. See
+[this note](https://github.com/NicolasBoumal/manopt/blob/97b6eb6b185334ab7b3991585ed2c044d69ee905/manopt/manifolds/fixedrank/fixedrankembeddedfactory.m#L76-L78)
+"""
+function max_stepsize(M::FixedRankMatrices, p)
+    return max_stepsize(M)
+end
+max_stepsize(M::FixedRankMatrices) = manifold_dimension(M)
+
+"""
+    max_stepsize(::SymmetricPositiveDefinite, p)
+
+Return the maximum stepsize on the [`SymmetricPositiveDefinite`](@extref) manifold.
+The injectivity radius of `SymmetricPositiveDefinite` is infinite, but we return the
+logarithm of the maximum floating-point number to avoid numerical issues.
+"""
+max_stepsize(::SymmetricPositiveDefinite, p) = log(floatmax(eltype(p)))
+
+"""
+    max_stepsize(M::Hyperrectangle, p)
+
+The default maximum stepsize for `Hyperrectangle` manifold with corners is maximum
+of distances from `p` to each boundary.
+"""
+function max_stepsize(M::Hyperrectangle, p)
+    lb = M.lb
+    ub = M.ub
+    ms = zero(eltype(p))
+    @inbounds @simd for i in eachindex(lb, ub, p)
+        dist_ub = ub[i] - p[i]
+        dist_lb = p[i] - lb[i]
+        cand_ub = ifelse(dist_ub > 0, dist_ub, zero(dist_ub))
+        cand_lb = ifelse(dist_lb > 0, dist_lb, zero(dist_lb))
+        ms = max(ms, max(cand_ub, cand_lb))
+    end # COV_EXCL_LINE
+    return ms
+end
+function max_stepsize(M::Hyperrectangle)
+    ms = 0.0
+    for i in eachindex(M.lb, M.ub)
+        ms = max(ms, M.ub[i] - M.lb[i])
+    end
+    return ms
+end
+function max_stepsize(::ProbabilitySimplex)
+    return 1.0
+end
+
+"""
+    mid_point(M, p, q, x)
+    mid_point!(M, y, p, q, x)
+
+Compute the mid point between `p` and `q`. If there is more than one mid point
+of (not necessarily minimizing) geodesics (for example on the sphere), the one nearest
+to `x` is returned (in place of `y`).
+"""
+mid_point(M::AbstractManifold, p, q, ::Any) = mid_point(M, p, q)
+mid_point!(M::AbstractManifold, y, p, q, ::Any) = mid_point!(M, y, p, q)
+
+function mid_point(M::Circle, p, q, x)
+    if distance(M, p, q) ≈ π
+        X = 0.5 * log(M, p, q)
+        Y = log(M, p, x)
+        return exp(M, p, (sign(X) == sign(Y) ? 1 : -1) * X)
+    end
+    return mid_point(M, p, q)
+end
+
+function mid_point(M::Sphere, p, q, x)
+    if isapprox(M, p, -q)
+        X = log(M, p, x) / distance(M, p, x) * π
+    else
+        X = log(M, p, q)
+    end
+    return exp(M, p, 0.5 * X)
+end
+function mid_point!(M::Sphere, y, p, q, x)
+    if isapprox(M, p, -q)
+        X = log(M, p, x) / distance(M, p, x) * π
+    else
+        X = log(M, p, q)
+    end
+    y .= exp(M, p, 0.5 * X)
+    return y
+end
+
+
+"""
+    Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
+
+Set element of tangent vector `d` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle)
+at index `i` to 0.
+"""
+function Manopt.set_zero_at_index!(::Hyperrectangle, d, i)
+    d[i] = 0
+    return d
+end
+
+"""
+    Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, d, t_current::Real)
+
+Limit the per-component stepsize in `d_out` to the bound imposed by the box constraints.
+
+For each element `i` in the tangent vector `d_out`, if the stepsize bound in direction `d`
+for that element is less than `t_current`, set the element of `d_out` to the distance from
+`p[i]` to the bound in the direction of `d[i]`. If the stepsize bound is non-positive,
+set the element to 0.
+"""
+function Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, d, t_current::Real)
+
+    for i in eachindex(d_out, d)
+        bound = get_stepsize_bound(M, p, d, i)
+        if bound > 0
+            if bound < t_current && d_out[i] != 0
+                d_out[i] = d[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]
+            end
+        else
+            d_out[i] = 0
+        end
+    end
+    return d_out
+end
+
+"""
+    Manopt.has_anisotropic_max_stepsize(::Hyperrectangle)
+
+Returns `true`, as [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`) manifold requires generalized Cauchy point computation in solvers.
+"""
+Manopt.has_anisotropic_max_stepsize(::Hyperrectangle) = true
+
+"""
+    Manopt.get_at_bound_index(::Hyperrectangle, X, b)
+
+Extract the element of tangent vector `X` to a point on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle)
+at index `b`.
+"""
+Manopt.get_at_bound_index(::Hyperrectangle, X, b) = X[b]

@@ -1,0 +1,67 @@
+name = "Manopt"
+uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
+version = "0.6.4"
+
+[workspace]
+projects = ["test", "docs", "tutorials"]
+
+[deps]
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Glossaries = "8f48dd54-e453-4cdc-9500-53b96149560b"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+ManifoldDiff = "af67fdf4-a580-4b9f-bbec-742ef357defd"
+ManifoldsBase = "3362f125-f0bb-47a3-aa74-596ffd7ef2fb"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
+Preferences = "21216c6a-2e73-6563-6e65-726566657250"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[weakdeps]
+LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
+LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
+Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
+QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
+
+[extensions]
+ManoptLRUCacheExt = "LRUCache"
+ManoptLineSearchesExt = "LineSearches"
+ManoptManifoldsExt = "Manifolds"
+ManoptRecursiveArrayToolsExt = "RecursiveArrayTools"
+ManoptRipQPQuadraticModelsExt = ["RipQP", "QuadraticModels"]
+
+[compat]
+DataStructures = "0.17, 0.18, 0.19"
+Dates = "1.10"
+Glossaries = "0.1.1"
+LRUCache = "1.4"
+LineSearches = "7.2.0"
+LinearAlgebra = "1.10"
+ManifoldDiff = "0.3.8, 0.4"
+Manifolds = "0.11.2"
+ManifoldsBase = "2.5.0"
+Markdown = "1.10"
+Preferences = "1.4"
+Printf = "1.10"
+QuadraticModels = "0.9"
+Random = "1.10"
+RecursiveArrayTools = "2, 3, 4"
+RipQP = "0.6.4, 0.7"
+SparseArrays = "1.10"
+Statistics = "1.10"
+julia = "1.10"
+
+[[authors]]
+affiliation = "Norwegian University of Science and Technology"
+alias = "kellertuer"
+city = "Trondheim"
+country = "NO"
+email = "manopt@ronnybergmann.net"
+family-names = "Bergmann"
+given-names = "Ronny"
+orcid = "https://orcid.org/0000-0001-8342-7218"
+website = "https://ronnybergmann.net"

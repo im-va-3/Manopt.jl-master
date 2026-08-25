@@ -1,0 +1,101 @@
+"""
+    LineSearchesStepsize <: Stepsize
+
+Wrapper for line searches available in the `LineSearches.jl` library.
+
+# Constructors
+
+    LineSearchesStepsize(M::AbstractManifold, linesearch; kwargs...)
+    LineSearchesStepsize(linesearch; kwargs...)
+
+Wrap `linesearch` (for example [`HagerZhang`](https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.HagerZhang)
+or [`MoreThuente`](https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.MoreThuente)).
+The initial step selection from `LineSearches.jl` is not yet supported and `initial_guess` is
+always used instead.
+
+# Keyword Arguments
+
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`()`: the initial guess for the step size to
+  start the line search from.
+* `last_stepsize=NaN`: the initial value to store as the last step size computed.
+$(_kwargs([:retraction_method, :vector_transport_method]))
+
+Without the manifold `M` as a first argument, `retraction_method` defaults to
+`ExponentialRetraction()` and `vector_transport_method` to `ParallelTransport()`.
+"""
+mutable struct LineSearchesStepsize{
+        TLS, TIG <: AbstractInitialLinesearchGuess, TRM <: AbstractRetractionMethod, TVTM <: AbstractVectorTransportMethod, TF <: Real,
+    } <: Stepsize
+    linesearch::TLS
+    initial_guess::TIG
+    retraction_method::TRM
+    vector_transport_method::TVTM
+    last_stepsize::TF
+end
+function LineSearchesStepsize(
+        M::AbstractManifold,
+        linesearch;
+        initial_guess::AbstractInitialLinesearchGuess = ConstantInitialGuess(),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M),
+        vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M),
+        last_stepsize::Real = NaN,
+    )
+    return LineSearchesStepsize(
+        linesearch;
+        initial_guess = initial_guess,
+        retraction_method = retraction_method,
+        vector_transport_method = vector_transport_method,
+        last_stepsize = last_stepsize
+    )
+end
+function LineSearchesStepsize(
+        linesearch;
+        initial_guess::ILG = ConstantInitialGuess(),
+        retraction_method::RM = ExponentialRetraction(),
+        vector_transport_method::VTM = ParallelTransport(),
+        last_stepsize::Real = NaN,
+    ) where {ILG <: AbstractInitialLinesearchGuess, RM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod}
+    return LineSearchesStepsize{typeof(linesearch), ILG, RM, VTM, typeof(last_stepsize)}(
+        linesearch, initial_guess, retraction_method, vector_transport_method, last_stepsize
+    )
+end
+
+"""
+    linesearches_get_max_alpha(ls)
+
+Get the maximum step size for `LineSearches.jl` line search `ls`.
+"""
+linesearches_get_max_alpha(ls)
+
+function linesearches_get_max_alpha end
+
+"""
+    linesearches_set_max_alpha(ls, max_alpha::Real)
+
+Set the maximum step size for `LineSearches.jl` line search `ls` to `max_alpha`.
+Return a new line search object with the updated maximum step size.
+"""
+linesearches_set_max_alpha(ls, max_alpha::Real)
+
+function linesearches_set_max_alpha end
+
+function Base.show(io::IO, cs::LineSearchesStepsize)
+    return print(
+        io,
+        "LineSearchesStepsize($(cs.linesearch); initial_guess=$(cs.initial_guess), retraction_method=$(cs.retraction_method), vector_transport_method=$(cs.vector_transport_method), last_stepsize=$(cs.last_stepsize))",
+    )
+end
+function status_summary(cs::LineSearchesStepsize; context::Symbol = :default)
+    (context === :short) && return repr(cs)
+    (context === :inline) && return "A line search step size wrapper for LineSearches.jl (last step size: $(cs.last_stepsize))"
+    return """
+    A line search step size wrapper for LineSearches.jl
+    (last step size: $(cs.last_stepsize))
+
+    ## Parameters
+    * line search:            $(_MANOPT_INDENT)$(cs.linesearch)
+    * initial guess:          $(_MANOPT_INDENT)$(cs.initial_guess)
+    * retraction method:      $(_MANOPT_INDENT)$(cs.retraction_method)
+    * vector transport method:$(_MANOPT_INDENT)$(cs.vector_transport_method)
+    """
+end

@@ -1,0 +1,117 @@
+module ManoptRipQPQuadraticModelsExt
+
+using Manopt
+import Manopt:
+    convex_bundle_method_subsolver,
+    convex_bundle_method_subsolver!,
+    proximal_bundle_method_subsolver,
+    proximal_bundle_method_subsolver!,
+    gradient_sampling_subsolver,
+    gradient_sampling_subsolver!
+using ManifoldsBase
+using LinearAlgebra: tril
+using SparseArrays: sparse
+
+using QuadraticModels: QuadraticModel
+using RipQP: ripqp
+
+function convex_bundle_method_subsolver(
+        M::A, p_last_serious, linearization_errors, transported_subgradients
+    ) where {A <: AbstractManifold}
+    d = length(linearization_errors)
+    λ = zeros(d)
+    convex_bundle_method_subsolver!(
+        M, λ, p_last_serious, linearization_errors, transported_subgradients
+    )
+    return λ
+end
+function convex_bundle_method_subsolver!(
+        M::A, λ, p_last_serious, linearization_errors, transported_subgradients
+    ) where {A <: AbstractManifold}
+    d = length(linearization_errors)
+    H = [
+        inner(M, p_last_serious, X, Y) for X in transported_subgradients,
+            Y in transported_subgradients
+    ]
+    qm = QuadraticModel(
+        linearization_errors,
+        sparse(tril(H));
+        # ∑ λ = 1
+        A = reshape(ones(d), 1, d),
+        lcon = [one(eltype(linearization_errors))],
+        ucon = [one(eltype(linearization_errors))],
+        # λ ≥ 0
+        lvar = zeros(d),
+        uvar = [Inf for i in 1:d],
+        c0 = zero(eltype(linearization_errors)),
+    )
+    # We work in-place of l, but that might be memory from an earlier subsolver run with a different length result
+    s = ripqp(qm; display = false).solution
+    (length(λ) != length(s)) && resize!(λ, length(s))
+    λ .= s
+    return λ
+end
+
+function proximal_bundle_method_subsolver(
+        M::A, p_last_serious, μ, approximation_errors, transported_subgradients
+    ) where {A <: AbstractManifold}
+    d = length(approximation_errors)
+    λ = zeros(d)
+    proximal_bundle_method_subsolver!(
+        M, λ, p_last_serious, μ, approximation_errors, transported_subgradients
+    )
+    return λ
+end
+function proximal_bundle_method_subsolver!(
+        M::A, λ, p_last_serious, μ, approximation_errors, transported_subgradients
+    ) where {A <: AbstractManifold}
+    d = length(approximation_errors)
+    H =
+        1 / μ * [
+        inner(M, p_last_serious, X, Y) for X in transported_subgradients,
+            Y in transported_subgradients
+    ]
+    qm = QuadraticModel(
+        approximation_errors,
+        sparse(tril(H));
+        # ∑ λ = 1
+        A = reshape(ones(d), 1, d),
+        lcon = [one(eltype(approximation_errors))],
+        ucon = [one(eltype(approximation_errors))],
+        # λ ≥ 0
+        lvar = zeros(d),
+        uvar = [Inf for i in 1:d],
+        c0 = zero(eltype(approximation_errors)),
+    )
+    # We work in-place of l, but that might be memory from an earlier subsolver run with a different length result
+    s = ripqp(qm; display = false).solution
+    (length(λ) != length(s)) && resize!(λ, length(s))
+    λ .= s
+    return λ
+end
+
+function gradient_sampling_subsolver(
+        M::AbstractManifold, p, sampled_gradients
+    )
+    λ = zeros(length(sampled_gradients))
+    gradient_sampling_subsolver!(M, λ, p, sampled_gradients)
+    return λ
+end
+function gradient_sampling_subsolver!(
+        M::AbstractManifold, λ, p, sampled_gradients
+    )
+    d = length(sampled_gradients)
+    T = eltype(λ)
+    H = [inner(M, p, X, Y) for X in sampled_gradients, Y in sampled_gradients]
+    qm = QuadraticModel(
+        zeros(d), sparse(tril(H));
+        c0 = zero(T),
+        # ∑ λ = 1
+        A = reshape(ones(d), 1, d), lcon = [one(T)], ucon = [one(T)],
+        # λ ≥ 0
+        lvar = zeros(d), uvar = [Inf for i in 1:d],
+    )
+    λ .= ripqp(qm; display = false).solution
+    return λ
+end
+end
